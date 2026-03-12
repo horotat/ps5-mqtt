@@ -8,7 +8,7 @@ function makeSettings(overrides: Partial<Settings> = {}): Settings {
         checkAccountInterval: 5000,
         credentialStoragePath: '/tmp/creds.json',
         allowPs4Devices: false,
-        deviceDiscoveryBroadcastAddress: undefined as unknown as string,
+        deviceDiscoveryBroadcastAddress: undefined,
         deviceDiscoveryBroadcastAddresses: [],
         deviceHosts: [],
         discoveryTopic: 'homeassistant',

@@ -59,7 +59,7 @@ async function discoverFromTarget(
     const devices: IDiscoveredDevice[] = [];
 
     for await (const device of discovery.discover()) {
-        if (!(!allowPs4Devices && device.type === DeviceType.PS4)) {
+        if (allowPs4Devices || device.type !== DeviceType.PS4) {
             devices.push(device);
         }
     }
