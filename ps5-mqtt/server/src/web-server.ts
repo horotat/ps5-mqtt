@@ -20,14 +20,62 @@ const logError = createErrorLogger();
 
 let app: Express | undefined = undefined;
 
+/**
+ * Build the list of discovery target addresses from settings.
+ * Merges legacy single address, multiple addresses, and device host IPs.
+ */
+function getWebDiscoveryTargets(settings: Settings): string[] {
+    const targets: string[] = [];
+
+    if (settings.deviceDiscoveryBroadcastAddress) {
+        targets.push(settings.deviceDiscoveryBroadcastAddress);
+    }
+
+    for (const addr of settings.deviceDiscoveryBroadcastAddresses) {
+        if (addr && !targets.includes(addr)) {
+            targets.push(addr);
+        }
+    }
+
+    for (const deviceHost of settings.deviceHosts) {
+        if (deviceHost.host && !targets.includes(deviceHost.host)) {
+            targets.push(deviceHost.host);
+        }
+    }
+
+    return targets;
+}
+
+/**
+ * Discover devices against a single target IP (broadcast or unicast).
+ */
+async function discoverFromTarget(
+    target: string | undefined,
+    allowPs4Devices: boolean,
+    timeoutMillis = 5000
+): Promise<IDiscoveredDevice[]> {
+    const discoveryOpts = target ? { timeoutMillis, deviceIp: target } : { timeoutMillis };
+    const discovery = new Discovery(discoveryOpts);
+    const devices: IDiscoveredDevice[] = [];
+
+    for await (const device of discovery.discover()) {
+        if (allowPs4Devices || device.type !== DeviceType.PS4) {
+            devices.push(device);
+        }
+    }
+
+    return devices;
+}
+
 export function setupWebserver(
     port: number | string,
-    {
+    settings: Settings
+): Express {
+    const {
         allowPs4Devices,
         credentialStoragePath,
-        deviceDiscoveryBroadcastAddress
-    }: Settings
-): Express {
+    } = settings;
+
     if (app !== undefined) {
         throw Error('web server is already running');
     }
@@ -40,26 +88,65 @@ export function setupWebserver(
 
     app.get('/api/discover', async (req, res) => {
         try {
-            const discovery = new Discovery({
-                timeoutMillis: 5000,
-                deviceIp: deviceDiscoveryBroadcastAddress
-            });
+            const targets = getWebDiscoveryTargets(settings);
+            const allDevices: IDiscoveredDevice[] = [];
+            const seenIds = new Set<string>();
 
-            const devices: IDiscoveredDevice[] = [];
-
-            for await (const device of discovery.discover()) {
-                // filter out PS4's if setting says so
-                if (!(!allowPs4Devices && device.type === DeviceType.PS4)) {
-                    devices.push(device)
+            if (targets.length === 0) {
+                // Default broadcast (no specific target)
+                debug("Web discovery: using default broadcast");
+                const devices = await discoverFromTarget(undefined, allowPs4Devices);
+                for (const device of devices) {
+                    if (!seenIds.has(device.id)) {
+                        seenIds.add(device.id);
+                        allDevices.push(device);
+                    }
+                }
+            } else {
+                for (const target of targets) {
+                    try {
+                        debug("Web discovery: trying target %s", target);
+                        const devices = await discoverFromTarget(target, allowPs4Devices);
+                        for (const device of devices) {
+                            if (!seenIds.has(device.id)) {
+                                seenIds.add(device.id);
+                                allDevices.push(device);
+                            }
+                        }
+                    } catch (e) {
+                        debug("Web discovery: no response from target %s", target);
+                    }
                 }
             }
 
-            res.send({
-                devices
-            });
+            res.send({ devices: allDevices });
         } catch (e) {
             logError(e);
             res.status(500).send();
+        }
+    });
+
+    app.post('/api/discover-host', async (req, res) => {
+        try {
+            const { host } = req.body as { host: string };
+            if (!host) {
+                res.status(400).send('host is required');
+                return;
+            }
+
+            debug("Manual host discovery: trying %s", host);
+            const devices = await discoverFromTarget(host, allowPs4Devices, 8000);
+
+            if (devices.length === 0) {
+                debug("Manual host discovery: no device found at %s", host);
+                res.send({ devices: [] });
+            } else {
+                debug("Manual host discovery: found %d device(s) at %s", devices.length, host);
+                res.send({ devices });
+            }
+        } catch (e) {
+            debug("Manual host discovery failed for requested host: %s", e);
+            res.send({ devices: [] });
         }
     });
 

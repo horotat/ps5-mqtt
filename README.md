@@ -42,6 +42,8 @@ The following features have been implemented or are planned for future implement
 | Discover Playstation 5 devices on local network    | ✔           |
 | [Web UI for acquiring credentials][credentials-ui] | ✔           |
 | Match [PSN account activity][1.0.0] to device      | ✔           |
+| Multi-VLAN / routed subnet discovery               | ✔           |
+| Direct device registration by IP                   | ✔           |
 
 ## Installation
 1. Install an [MQTT broker][mqtt-broker], if you haven't already.
@@ -54,6 +56,15 @@ The following features have been implemented or are planned for future implement
 The MQTT entities will be created automatically when a new device is discovered on your network. 
 
 *Note: this does require MQTT auto-discovery to be enabled.* 
+
+## VLAN / Multi-Subnet Support
+If your PlayStation is on a **different VLAN/subnet** than your Home Assistant instance, you can:
+
+1. **Register devices by IP** – Add `device_hosts` to your config to probe specific IPs via unicast (no broadcast needed).
+2. **Use multiple broadcast addresses** – Add `device_discovery_broadcast_addresses` for cross-subnet broadcast discovery.
+3. **Discover via the Web UI** – Use the "Add Device by IP" form in the Web UI to find a device at a specific IP.
+
+See the [documentation][ha-docs] for detailed VLAN setup instructions. 
 
 ## Using the add-on with Home Assistant Core (`Docker`)
 This bit of [documentation][docker-docs] should get you on your way! 😻

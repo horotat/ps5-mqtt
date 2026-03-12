@@ -17,6 +17,8 @@ export interface AppConfig {
 
     include_ps4_devices: boolean,
     device_discovery_broadcast_address: string,
+    device_discovery_broadcast_addresses: string[],
+    device_hosts: AppConfig.DeviceHostInfo[],
 
     psn_accounts: AppConfig.PsnAccountInfo[],
 
@@ -28,6 +30,11 @@ export interface AppConfig {
 }
 
 export module AppConfig {
+    export interface DeviceHostInfo {
+        host: string;
+        name?: string;
+    }
+
     export interface PsnAccountInfo {
         npsso: string;
         username?: string;
@@ -94,6 +101,8 @@ function getEnvConfig(): Partial<AppConfig> {
         INCLUDE_PS4_DEVICES,
 
         DEVICE_DISCOVERY_BROADCAST_ADDRESS,
+        DEVICE_DISCOVERY_BROADCAST_ADDRESSES,
+        DEVICE_HOSTS,
 
         DEVICE_CHECK_INTERVAL,
         DEVICE_DISCOVERY_INTERVAL,
@@ -128,6 +137,9 @@ function getEnvConfig(): Partial<AppConfig> {
         include_ps4_devices: Boolean(INCLUDE_PS4_DEVICES) ? JSON.parse(INCLUDE_PS4_DEVICES) : undefined,
 
         device_discovery_broadcast_address: DEVICE_DISCOVERY_BROADCAST_ADDRESS,
+        device_discovery_broadcast_addresses: DEVICE_DISCOVERY_BROADCAST_ADDRESSES
+            ? JSON.parse(DEVICE_DISCOVERY_BROADCAST_ADDRESSES) : undefined,
+        device_hosts: DEVICE_HOSTS ? JSON.parse(DEVICE_HOSTS) : undefined,
 
         credentialsStoragePath: CREDENTIAL_STORAGE_PATH,
         frontendPort: FRONTEND_PORT

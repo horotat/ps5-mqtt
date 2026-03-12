@@ -72,4 +72,20 @@ export default class Api {
         }
     }
 
+    async discoverByHost(host: string): Promise<IDevice[] | undefined> {
+        try {
+            const res = await fetch('api/discover-host', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ host })
+            });
+            return (await res.json() as DiscoveryResponse)?.devices;
+        } catch (e) {
+            this.logger.error(e);
+            return undefined;
+        }
+    }
+
 }

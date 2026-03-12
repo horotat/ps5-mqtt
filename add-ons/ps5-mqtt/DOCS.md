@@ -81,7 +81,86 @@ IP address the addon will use for UDP broadcasting which is required for device 
 
 If your devices are located on a VLAN you must use this option to point the addon to the broadcast ip of the VLAN your devices are located on.
 
-*NOTE: only one broadcast address is supported. So all devices will need to be on the same VLAN.*
+*NOTE: only one broadcast address is supported by this option. If you need to discover devices across multiple VLANs, use `device_discovery_broadcast_addresses` (plural) or `device_hosts` instead.*
+
+### `device_discovery_broadcast_addresses` *optional*, *multiple*
+A list of broadcast addresses to use for UDP discovery. This enables discovery across **multiple VLANs or subnets**.
+
+Each address will be probed during every discovery cycle. Devices found on any address will be registered.
+
+```yaml
+device_discovery_broadcast_addresses:
+  - 192.168.1.255
+  - 192.168.20.255
+```
+
+*NOTE: This option can be used alongside `device_discovery_broadcast_address` (singular). All configured addresses will be tried.*
+
+### `device_hosts` *optional*, *multiple*
+A list of PlayStation device IPs (or hostnames) to probe directly via **unicast**. This is the recommended approach for **VLAN-separated / routed networks** where UDP broadcast does not reach the device.
+
+When configured, the add-on will send a discovery probe directly to each host. This does **not** depend on UDP broadcast reaching the remote subnet.
+
+```yaml
+device_hosts:
+  - host: 192.168.1.35
+    name: Living Room PS5       # optional friendly label (not used for discovery)
+  - host: 192.168.1.36
+```
+
+**Behavior:**
+- Configured hosts are probed every `device_discovery_interval` alongside any broadcast-based discovery.
+- The Web UI also probes these hosts when you click **Refresh Devices**.
+- You can add a device by IP directly from the Web UI using the **Add Device by IP** form.
+
+## VLAN / Multi-Subnet Setup Guide
+
+If your Home Assistant instance and PlayStation devices are on **different VLANs or subnets**, standard UDP broadcast discovery will not work out of the box. Here are the recommended approaches, from simplest to most flexible:
+
+### Option 1: Direct host registration (recommended)
+
+Add each PlayStation's IP to `device_hosts`. This uses unicast probes and does not require any broadcast routing.
+
+```yaml
+device_hosts:
+  - host: 192.168.1.35
+```
+
+**Requirements:**
+- The PS5 must be reachable from the Home Assistant host (inter-VLAN routing or firewall rules allowing traffic).
+- The PS5 must be in **rest mode** or **powered on** (not fully off).
+
+### Option 2: Directed broadcast
+
+If your router supports **directed broadcast forwarding** (also called UDP helper/relay), you can configure the broadcast address of the remote subnet:
+
+```yaml
+device_discovery_broadcast_address: 192.168.1.255
+```
+
+Or for multiple subnets:
+
+```yaml
+device_discovery_broadcast_addresses:
+  - 192.168.1.255
+  - 192.168.20.255
+```
+
+*NOTE: Many routers and firewalls block directed broadcasts by default. Option 1 is more reliable.*
+
+### Option 3: Web UI manual discovery
+
+Use the **Add Device by IP** form in the Web UI to discover a device at a specific IP address. Enter the IP, click Discover, and once found proceed with the authentication flow as usual.
+
+### Firewall requirements
+
+For any cross-VLAN setup, ensure these ports are allowed between Home Assistant and the PS5:
+
+| Port | Protocol | Direction | Purpose |
+|------|----------|-----------|---------|
+| 987  | UDP      | HA → PS5  | Device discovery probe |
+| 9302 | UDP      | PS5 → HA  | Discovery response |
+| 9295 | TCP      | HA → PS5  | Remote play / device control |
 
 <!-- LINKS -->
 [npsso]: https://ca.account.sony.com/api/v1/ssocookie

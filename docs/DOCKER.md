@@ -60,6 +60,11 @@ services:
 
       - INCLUDE_PS4_DEVICES=false
 
+      # Optional: direct device IPs for cross-VLAN setups (JSON array)
+      # - 'DEVICE_HOSTS=[{"host":"192.168.1.35","name":"Living Room PS5"}]'
+      # Optional: multiple broadcast addresses for multi-subnet discovery (JSON array)
+      # - 'DEVICE_DISCOVERY_BROADCAST_ADDRESSES=["192.168.1.255","192.168.20.255"]'
+
       - FRONTEND_PORT=8645
 
       - CREDENTIAL_STORAGE_PATH=/config/credentials.json
@@ -105,6 +110,14 @@ services:
   "device_discovery_interval": 60000,
 
   "include_ps4_devices": false,
+
+  "device_hosts": [
+    {"host": "192.168.1.35", "name": "Living Room PS5"}
+  ],
+
+  "device_discovery_broadcast_addresses": [
+    "192.168.1.255"
+  ],
 
   "psn_accounts": [
     {
