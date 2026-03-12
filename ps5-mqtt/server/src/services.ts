@@ -1,6 +1,11 @@
 export const MQTT_CLIENT = 'MQTT';
 export const SETTINGS = 'SETTINGS';
 
+export interface DeviceHostInfo {
+    host: string;
+    name?: string;
+}
+
 export interface Settings {
     // polling intervals
     checkDevicesInterval: number;
@@ -11,6 +16,8 @@ export interface Settings {
     allowPs4Devices: boolean;
 
     deviceDiscoveryBroadcastAddress: string;
+    deviceDiscoveryBroadcastAddresses: string[];
+    deviceHosts: DeviceHostInfo[];
 
     discoveryTopic: string;
 }

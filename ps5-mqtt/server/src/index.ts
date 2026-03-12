@@ -80,6 +80,8 @@ async function run() {
         allowPs4Devices: appConfig.include_ps4_devices ?? true,
 
         deviceDiscoveryBroadcastAddress: appConfig.device_discovery_broadcast_address,
+        deviceDiscoveryBroadcastAddresses: appConfig.device_discovery_broadcast_addresses ?? [],
+        deviceHosts: appConfig.device_hosts ?? [],
 
         discoveryTopic: appConfig.mqtt.discovery_topic,
     };
